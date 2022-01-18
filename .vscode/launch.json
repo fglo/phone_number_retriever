@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": [
+                "https://www.chrobinson.com/en/",
+                "https://relativity.com/",
+                "https://www2.deloitte.com/pl/pl.html",
+                "https://www2.deloitte.com/pl/pl/footerlinks/contact-us.html?icid=bottom_contact-us",
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

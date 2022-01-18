@@ -1,0 +1,5 @@
+requests
+beautifulsoup4
+phonenumbers
+validators
+fake-useragent
