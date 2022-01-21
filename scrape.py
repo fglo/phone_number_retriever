@@ -101,9 +101,9 @@ class WebPage:
             url) == self.base_domain
         return is_valid
 
-    def format_url(self, url: str, parent_url: str) -> Optional[str]:
+    def format_url(self, url: str, parent_url: str) -> str:
         if not url:
-            return None
+            return url
 
         url = url.strip()
         if validators.url(url):
@@ -113,7 +113,7 @@ class WebPage:
         if re.match(r'^\w+.*', url):
             return f'{parent_url}/{url}'.strip()
 
-        return None
+        return url
 
     def get_links_from_page(self, html_doc: BeautifulSoup, page_url: str) -> list[Link]:
         links: list[Link] = []
