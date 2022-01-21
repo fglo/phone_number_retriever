@@ -1,5 +1,6 @@
-import re
 from sys import argv
+from typing import Optional
+import re
 import requests
 from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup
@@ -10,20 +11,20 @@ from fake_useragent import UserAgent
 from urllib3.util import Retry
 from urllib.parse import urlparse
 
-ua = UserAgent()
+UA = UserAgent()
 
-retry_strategy = Retry(
+RETRY_STRATEGY = Retry(
     total=5,
     status_forcelist=[408, 429, 500, 502, 503, 504],
     allowed_methods=["GET"],
     backoff_factor=1,
 )
-adapter = HTTPAdapter(max_retries=retry_strategy)
-http = requests.Session()
-http.mount("https://", adapter)
-http.mount("http://", adapter)
+HTTP_ADAPTER = HTTPAdapter(max_retries=RETRY_STRATEGY)
+HTTP = requests.Session()
+HTTP.mount("https://", HTTP_ADAPTER)
+HTTP.mount("http://", HTTP_ADAPTER)
 
-headers = {'User-Agent': str(ua.chrome)}
+HEADERS = {'User-Agent': str(UA.chrome)}
 
 PAGES_TO_CHECK = ['kontakt', 'skontaktujsieznami', 'skontaktujsie',
                   'contact', 'contactus', 'firma', 'company', 'onas', 'aboutus']
@@ -48,18 +49,18 @@ class PhoneNumber:
 
     @staticmethod
     def get_main_phone_number(phone_number_list):
-        return next((phone_number for phone_number in phone_number_list if phone_number.is_office_number()),
-                    next((phone_number for phone_number in phone_number_list if phone_number.is_fixed_line()),
-                         phone_number_list[0]))
+        office_number_generator = (phone_number for phone_number in phone_number_list if phone_number.is_office_number())
+        fixed_line_number_generator = (phone_number for phone_number in phone_number_list if phone_number.is_fixed_line())
+        return next(office_number_generator, next(fixed_line_number_generator, phone_number_list[0]))
 
     @staticmethod
     def escape_number(number: str) -> str:
         return number.replace('+', '\+') \
-                .replace('(', '\(') \
-                .replace(')', '\)') \
-                .replace('[', '\[') \
-                .replace('[', '\[') \
-                .replace(' ', '\s?')
+            .replace('(', '\(') \
+            .replace(')', '\)') \
+            .replace('[', '\[') \
+            .replace('[', '\[') \
+            .replace(' ', '\s?')
 
 
 class Link:
@@ -83,12 +84,12 @@ class WebPage:
         self.last_visited_link = -1
 
         parsed = urlparse(start_url)
-        self.base_domain = '' if parsed.hostname is None else parsed.hostname.split('.')[-2]
+        self.base_domain = '' if not parsed.hostname else parsed.hostname.split('.')[-2]
         self.base_url = f'{parsed.scheme}://{parsed.hostname}'
 
     def get_base_domain(self, url: str):
         hostname = urlparse(url).hostname
-        return '' if hostname is None else hostname.split('.')[-2]
+        return '' if not hostname else hostname.split('.')[-2]
 
     def get_base_url(self, url: str):
         parsed = urlparse(url)
@@ -96,10 +97,11 @@ class WebPage:
         return base_url
 
     def is_url_valid(self, url: str):
-        is_valid = url and 'javascript:void(0)' not in url and self.get_base_domain(url) == self.base_domain
+        is_valid = url and 'javascript:void(0)' not in url and self.get_base_domain(
+            url) == self.base_domain
         return is_valid
 
-    def format_url(self, url: str, parent_url: str):
+    def format_url(self, url: str, parent_url: str) -> Optional[str]:
         if not url:
             return None
 
@@ -123,7 +125,8 @@ class WebPage:
         return links
 
     def find_phone_numbers(self, html_doc: BeautifulSoup) -> list[PhoneNumber]:
-        scripts = ' '.join([script.text for script in html_doc.findAll('script')])
+        scripts = ' '.join(
+            [script.text for script in html_doc.findAll('script')])
         text = html_doc.text + '\n' + scripts
         numbers_enumerator = phonenumbers.PhoneNumberMatcher(text, None)
         phone_number_list: list[PhoneNumber] = []
@@ -145,7 +148,8 @@ class WebPage:
 
     def get_page(self, url: str) -> BeautifulSoup:
         self.visited_urls.append(url)
-        html_doc = http.get(url, headers=headers, verify=True, allow_redirects=True).text
+        html_doc = HTTP.get(url, headers=HEADERS,
+                            verify=True, allow_redirects=True).text
         html_doc_parsed = BeautifulSoup(html_doc, 'html.parser')
         return html_doc_parsed
 
@@ -164,7 +168,7 @@ class WebPage:
             self.last_visited_link += 1
             yield self.links_to_visit[self.last_visited_link].url
 
-    def retrieve_main_phone_number(self) -> PhoneNumber:
+    def retrieve_main_phone_number(self) -> Optional[PhoneNumber]:
         for url in self.get_urls_to_visit():
             html_doc = self.get_page(url)
             phone_number_list = self.find_phone_numbers(html_doc)
