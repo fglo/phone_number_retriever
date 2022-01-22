@@ -81,7 +81,7 @@ class WebPage:
 
         self.links_to_visit: list[Link] = [Link('MAIN', start_url)]
         self.visited_urls: list[str] = []
-        self.last_visited_link = -1
+        self.last_visited_link_id = -1
 
         parsed = urlparse(start_url)
         self.base_domain = '' if not parsed.hostname else parsed.hostname.split('.')[-2]
@@ -164,9 +164,9 @@ class WebPage:
         self.links_to_visit.extend(links)
 
     def get_urls_to_visit(self):
-        while self.last_visited_link < len(self.links_to_visit) - 1:
-            self.last_visited_link += 1
-            yield self.links_to_visit[self.last_visited_link].url
+        while self.last_visited_link_id < len(self.links_to_visit) - 1:
+            self.last_visited_link_id += 1
+            yield self.links_to_visit[self.last_visited_link_id].url
 
     def retrieve_main_phone_number(self) -> Optional[PhoneNumber]:
         for url in self.get_urls_to_visit():
